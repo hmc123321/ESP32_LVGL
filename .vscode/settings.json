@@ -1,0 +1,7 @@
+{
+    "commentTranslate.source": "Google",
+    "files.associations": {
+        "lv_demos.h": "c",
+        "lvgl.h": "c"
+    }
+}
