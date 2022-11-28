@@ -43,26 +43,32 @@ void setup()
     my_button_regist();
 //以下写你自己的控件代码  
     lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(btn1,100,50);
-    lv_obj_align(btn1,LV_ALIGN_CENTER,0,-100);
+    lv_obj_set_size(btn1,60,30);
+    lv_obj_align(btn1,LV_ALIGN_CENTER,0,-60);
     lv_obj_t * btn1_label = lv_label_create(btn1);
-    lv_label_set_text(btn1_label,"BUTTON 1");
+    lv_label_set_text(btn1_label,"BTN 1");
 
      lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(btn2,100,50);
-    lv_obj_align(btn2,LV_ALIGN_CENTER,0,0);
+    lv_obj_set_size(btn2,60,30);
+    lv_obj_align(btn2,LV_ALIGN_CENTER,0,-20);
     lv_obj_t * btn2_label = lv_label_create(btn2);
-    lv_label_set_text(btn2_label,"BUTTON 2");
+    lv_label_set_text(btn2_label,"BTN 2");
 
      lv_obj_t * btn3 = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(btn3,100,50);
-    lv_obj_align(btn3,LV_ALIGN_CENTER,0,100);
+    lv_obj_set_size(btn3,60,30);
+    lv_obj_align(btn3,LV_ALIGN_CENTER,0,20);
     lv_obj_t * btn3_label = lv_label_create(btn3);
-    lv_label_set_text(btn3_label,"BUTTON 3");
+    lv_label_set_text(btn3_label,"BTN 3");
+
+    lv_obj_t * slider1 = lv_slider_create(lv_scr_act());
+    lv_slider_set_range(slider1,0,20);
+    lv_obj_set_size(slider1,100,20);
+    lv_obj_align(slider1,LV_ALIGN_CENTER,0,60);
 
     lv_group_add_obj(my_group,btn1);
     lv_group_add_obj(my_group,btn2);
     lv_group_add_obj(my_group,btn3);
+    lv_group_add_obj(my_group,slider1);
 }
 
 void loop()
