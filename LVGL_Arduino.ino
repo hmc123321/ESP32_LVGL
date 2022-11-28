@@ -7,12 +7,18 @@
 #define BTN_1 15
 #define BTN_2 13 
 #define BTN_3 26
+
+#define PRESSED_OK 2
+#define PRESSED_NEXT 1
+#define PRESSED_PREV -1
+#define PRESSED_NONE 0
 /*declare functions*/
-bool button_read(lv_indev_drv_t * drv, lv_indev_data_t*data);
+void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data);
 void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p );
-void button_init();
 void my_button_regist();
 void my_disp_drv_init();
+void button_init();
+int16_t button_process();
 
 /*Change to your screen resolution*/
 static const uint16_t screenWidth  = 320;
@@ -36,8 +42,27 @@ void setup()
     my_disp_drv_init();
     my_button_regist();
 //以下写你自己的控件代码  
-    // lv_example_btn_1();
-    lv_demo_benchmark(LV_DEMO_BENCHMARK_MODE_RENDER_AND_DRIVER);          // OK
+    lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
+    lv_obj_set_size(btn1,100,50);
+    lv_obj_align(btn1,LV_ALIGN_CENTER,0,-100);
+    lv_obj_t * btn1_label = lv_label_create(btn1);
+    lv_label_set_text(btn1_label,"BUTTON 1");
+
+     lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
+    lv_obj_set_size(btn2,100,50);
+    lv_obj_align(btn2,LV_ALIGN_CENTER,0,0);
+    lv_obj_t * btn2_label = lv_label_create(btn2);
+    lv_label_set_text(btn2_label,"BUTTON 2");
+
+     lv_obj_t * btn3 = lv_btn_create(lv_scr_act());
+    lv_obj_set_size(btn3,100,50);
+    lv_obj_align(btn3,LV_ALIGN_CENTER,0,100);
+    lv_obj_t * btn3_label = lv_label_create(btn3);
+    lv_label_set_text(btn3_label,"BUTTON 3");
+
+    lv_group_add_obj(my_group,btn1);
+    lv_group_add_obj(my_group,btn2);
+    lv_group_add_obj(my_group,btn3);
 }
 
 void loop()
@@ -87,7 +112,7 @@ void my_button_regist()
   static lv_indev_drv_t indev_drv;
   lv_indev_drv_init(&indev_drv);      /*Basic initialization*/
   indev_drv.type = LV_INDEV_TYPE_ENCODER;
-  indev_drv.read_cb = button_read;
+  indev_drv.read_cb = encoder_callback;
   indev_drv.long_press_repeat_time = 500;
   /*Register the driver in LVGL and save the created input device object*/
   lv_indev_t * my_indev = lv_indev_drv_register(&indev_drv);
@@ -97,15 +122,67 @@ void my_button_regist()
   lv_indev_set_group(my_indev,my_group);
 }
 
-bool button_read(lv_indev_drv_t * drv, lv_indev_data_t*data){
-  data->key = last_key();            /*Get the last pressed or released key*/
-                                     /* use LV_KEY_ENTER for encoder press */
-  if(key_pressed()) data->state = LV_INDEV_STATE_PR;
+void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data){
+  int16_t temp = button_process();
+  if (temp == PRESSED_OK)
+  {
+    data->state = LV_INDEV_STATE_PR;
+  }
   else {
-      data->state = LV_INDEV_STATE_REL;
-      /* Optionally you can also use enc_diff, if you have encoder*/
-      data->enc_diff = enc_get_new_moves();
+    data->state = LV_INDEV_STATE_REL;
+    data->enc_diff = temp;
+  }
+}
+
+int16_t button_process()
+{
+  int16_t key_pressing_cnt_1 = 0,key_pressing_cnt_2 = 0,key_pressing_cnt_3 = 0;
+  int16_t temp;
+  //temp【 -1：按下了“+”；+1：按下了“-”；2：按下了“OK"；0：两个及以上一起按无效】
+  for (int i=0;i<12;i++)//12个采样窗口
+  {
+    if(digitalRead(BTN_1)==0)
+    {
+      key_pressing_cnt_1++;
+    }
+    else 
+    {
+      key_pressing_cnt_1--;
+    }
+    if(digitalRead(BTN_2)==0)
+    {
+      key_pressing_cnt_2++;
+    }
+    else 
+    {
+      key_pressing_cnt_2--;
+    }
+    if(digitalRead(BTN_3)==0)
+    {
+      key_pressing_cnt_3++;
+    }
+    else 
+    {
+      key_pressing_cnt_3--;
+    }
+    delay(1);
   }
 
-  return false; /*No buffering now so no more data read*/
+  if (((key_pressing_cnt_1 >=8)|(key_pressing_cnt_2 >=8)|(key_pressing_cnt_3 >=8)) >= 2)//同时按下两个及以上
+  {
+    temp = PRESSED_NONE;
+  }
+  else if(key_pressing_cnt_1 >=8)
+  {
+    temp = PRESSED_NEXT;
+  }
+  else if(key_pressing_cnt_2 >=8)
+  {
+    temp = PRESSED_OK;
+  }
+  else if(key_pressing_cnt_3 >=8)
+  {
+    temp = PRESSED_PREV;
+  }
+  return temp;
 }
