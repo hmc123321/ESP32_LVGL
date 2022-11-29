@@ -41,7 +41,7 @@ void setup()
     /*Initialize the drivers*/
     my_disp_drv_init();
     my_button_regist();
-//以下写你自己的控件代码  
+    //以下写你自己的控件代码  
     lv_obj_t * btn1 = lv_btn_create(lv_scr_act());
     lv_obj_set_size(btn1,60,30);
     lv_obj_align(btn1,LV_ALIGN_CENTER,0,-60);
@@ -124,7 +124,6 @@ void my_button_regist()
   lv_indev_t * my_indev = lv_indev_drv_register(&indev_drv);
 
   my_group = lv_group_create();
-  // lv_group_add_obj(my_group);
   lv_indev_set_group(my_indev,my_group);
 }
 
@@ -155,6 +154,7 @@ int16_t button_process()
     {
       key_pressing_cnt_1--;
     }
+
     if(digitalRead(BTN_2)==0)
     {
       key_pressing_cnt_2++;
@@ -163,6 +163,7 @@ int16_t button_process()
     {
       key_pressing_cnt_2--;
     }
+
     if(digitalRead(BTN_3)==0)
     {
       key_pressing_cnt_3++;
@@ -174,7 +175,7 @@ int16_t button_process()
     delay(1);
   }
 
-  if (((key_pressing_cnt_1 >=8)|(key_pressing_cnt_2 >=8)|(key_pressing_cnt_3 >=8)) >= 2)//同时按下两个及以上
+  if (((key_pressing_cnt_1 >=8)+(key_pressing_cnt_2 >=8)+(key_pressing_cnt_3 >=8)) >= 2)//同时按下两个及以上
   {
     temp = PRESSED_NONE;
   }
@@ -189,6 +190,10 @@ int16_t button_process()
   else if(key_pressing_cnt_3 >=8)
   {
     temp = PRESSED_PREV;
+  }
+  else 
+  {
+    return PRESSED_NONE;
   }
   return temp;
 }

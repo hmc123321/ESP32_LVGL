@@ -4,8 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:/Users/HMC/Documents/Arduino/libraries/**",
-                "C:/Users/HMC/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.5/**"
+                "C:/Users/Admin/Documents/Arduino/libraries/**",
+                "C:/Users/Admin/AppData/Local/Arduino15/packages/esp32/hardware/esp32/2.0.5/**"
             ],
             "defines": [
                 "_DEBUG",
