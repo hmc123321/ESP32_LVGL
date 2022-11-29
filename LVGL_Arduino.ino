@@ -4,9 +4,9 @@
 #include <examples/lv_examples.h>
 
 /*micro defines*/
-#define BTN_1 15
+#define BTN_1 26
 #define BTN_2 13 
-#define BTN_3 26
+#define BTN_3 15
 
 #define PRESSED_OK 2
 #define PRESSED_NEXT 1
@@ -119,7 +119,7 @@ void my_button_regist()
   lv_indev_drv_init(&indev_drv);      /*Basic initialization*/
   indev_drv.type = LV_INDEV_TYPE_ENCODER;
   indev_drv.read_cb = encoder_callback;
-  indev_drv.long_press_repeat_time = 500;
+  indev_drv.long_press_repeat_time = 5000;
   /*Register the driver in LVGL and save the created input device object*/
   lv_indev_t * my_indev = lv_indev_drv_register(&indev_drv);
 
@@ -130,13 +130,32 @@ void my_button_regist()
 void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data){
   static int16_t last_temp, long_press_cnt;
   int16_t temp = button_process();
-  if ((last_temp == temp)&&(long_press_cnt<=200))
+
+  if (last_temp == temp)
   {
-    data->state = LV_INDEV_STATE_REL;
-    data->enc_diff = 0;
     long_press_cnt++;
+    if (long_press_cnt > 10)
+    {
+      if ((long_press_cnt%3)==0)
+      {
+        if (temp == PRESSED_OK)
+        {
+          data->state = LV_INDEV_STATE_PR;
+        }
+        else 
+        {
+          data->state = LV_INDEV_STATE_REL;
+          data->enc_diff = temp;
+        }
+      }
+      else 
+      {
+        data->state = LV_INDEV_STATE_REL;
+        data->enc_diff = 0;
+      }
+    }
   }
-  else 
+  else
   {
     long_press_cnt = 0;
     if (temp == PRESSED_OK)
