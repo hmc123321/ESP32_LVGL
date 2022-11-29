@@ -128,15 +128,27 @@ void my_button_regist()
 }
 
 void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data){
+  static int16_t last_temp, long_press_cnt;
   int16_t temp = button_process();
-  if (temp == PRESSED_OK)
+  if ((last_temp == temp)&&(long_press_cnt<=200))
   {
-    data->state = LV_INDEV_STATE_PR;
-  }
-  else {
     data->state = LV_INDEV_STATE_REL;
-    data->enc_diff = temp;
+    data->enc_diff = 0;
+    long_press_cnt++;
   }
+  else 
+  {
+    long_press_cnt = 0;
+    if (temp == PRESSED_OK)
+    {
+      data->state = LV_INDEV_STATE_PR;
+    }
+    else {
+      data->state = LV_INDEV_STATE_REL;
+      data->enc_diff = temp;
+    }
+  }
+  last_temp = temp;
 }
 
 int16_t button_process()
