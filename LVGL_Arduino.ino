@@ -4,9 +4,17 @@
 #include <examples/lv_examples.h>
 
 /*micro defines*/
+#define MY_ESP32
+
+#ifdef MY_ESP32
 #define BTN_1 26
 #define BTN_2 13 
 #define BTN_3 15
+#else
+#define BTN_1 18
+#define BTN_2 13 
+#define BTN_3 47
+#endif
 
 #define PRESSED_OK 2
 #define PRESSED_NEXT 1
@@ -48,11 +56,15 @@ void setup()
     lv_obj_t * btn1_label = lv_label_create(btn1);
     lv_label_set_text(btn1_label,"BTN 1");
 
-     lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(btn2,60,30);
-    lv_obj_align(btn2,LV_ALIGN_CENTER,0,-20);
-    lv_obj_t * btn2_label = lv_label_create(btn2);
-    lv_label_set_text(btn2_label,"BTN 2");
+    LV_IMG_DECLARE(lvgl_btn1);
+    lv_obj_t * img1 = lv_img_create(lv_scr_act());
+    lv_img_set_src(img1, &lvgl_btn1);
+     lv_obj_align(img1, LV_ALIGN_CENTER, 0, -20);
+    //  lv_obj_t * btn2 = lv_btn_create(lv_scr_act());
+    // lv_obj_set_size(btn2,60,30);
+    // lv_obj_align(btn2,LV_ALIGN_CENTER,0,-20);
+    // lv_obj_t * btn2_label = lv_label_create(btn2);
+    // lv_label_set_text(btn2_label,"BTN 2");
 
      lv_obj_t * btn3 = lv_btn_create(lv_scr_act());
     lv_obj_set_size(btn3,60,30);
@@ -66,7 +78,7 @@ void setup()
     lv_obj_align(slider1,LV_ALIGN_CENTER,0,60);
 
     lv_group_add_obj(my_group,btn1);
-    lv_group_add_obj(my_group,btn2);
+    // lv_group_add_obj(my_group,btn2);
     lv_group_add_obj(my_group,btn3);
     lv_group_add_obj(my_group,slider1);
 }
