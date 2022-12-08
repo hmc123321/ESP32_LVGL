@@ -10,7 +10,7 @@
 
 // User defined information reported by "Read_User_Setup" test & diagnostics example
 #define USER_SETUP_INFO "User_Setup"
-
+#define MY_ESP32_S3_DEV
 // Define to disable all #warnings in library (can be put in User_Setup_Select.h)
 //#define DISABLE_ALL_LIBRARY_WARNINGS
 
@@ -128,7 +128,7 @@
 // driven with a PWM signal or turned OFF/ON then this must be handled by the user
 // sketch. e.g. with digitalWrite(TFT_BL, LOW);
 
-#ifdef MY_ESP32
+#ifdef  MY_ESP32_S3_DEV
 #define TFT_BL   8           // LED back-light control pin
 #define TFT_BACKLIGHT_ON HIGH  // Level to turn ON back-light (HIGH or LOW)
 #else
@@ -205,14 +205,16 @@
 
 // For ESP32 Dev board (only tested with ILI9341 display)
 // The hardware SPI can be mapped to any pins
-#ifdef MY_ESP32
+
+#ifdef MY_ESP32_S3_DEV
 #define TFT_MISO 35
 #define TFT_MOSI 37
 #define TFT_SCLK 38
 #define TFT_CS   39  // Chip select control pin
 #define TFT_DC   40  // Data Command control pin
 #define TFT_RST   36  // Reset pin (could connect to RST pin)
-#else
+#endif
+#ifdef MY_ESP32_DEV
 #define TFT_MISO 4
 #define TFT_MOSI 17
 #define TFT_SCLK 5
