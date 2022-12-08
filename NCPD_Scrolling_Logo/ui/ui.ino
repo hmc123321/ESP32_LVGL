@@ -2,13 +2,14 @@
 #include <TFT_eSPI.h>
 #include "ui.h"
 /*micro defines*/
-#define MY_ESP32
 
-#ifdef MY_ESP32
+#ifdef MY_ESP32_DEV
 #define BTN_1 26
 #define BTN_2 13 
 #define BTN_3 15
-#else
+#endif
+
+#ifdef MY_ESP32_S3_DEV
 #define BTN_1 18
 #define BTN_2 9 
 #define BTN_3 47
