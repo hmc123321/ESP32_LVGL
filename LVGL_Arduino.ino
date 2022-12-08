@@ -12,7 +12,7 @@
 #define BTN_3 15
 #else
 #define BTN_1 18
-#define BTN_2 13 
+#define BTN_2 9 
 #define BTN_3 47
 #endif
 
