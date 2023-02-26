@@ -1,23 +1,16 @@
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 #include "ui.h"
+
+#include "key_read.h"
+
 /*micro defines*/
 #define MY_ESP32
 
-#ifdef MY_ESP32
-#define BTN_1 26
-#define BTN_2 13 
-#define BTN_3 15
-#else
-#define BTN_1 18
-#define BTN_2 13 
-#define BTN_3 47
-#endif
+#define KEY_PERIOD pdMS_TO_TICKS(10)  //按键扫描周期
+#define REFRESH_PERIOD 5  //屏幕刷新周期
 
-#define PRESSED_OK 2
-#define PRESSED_NEXT 1
-#define PRESSED_PREV -1
-#define PRESSED_NONE 0
+
 /*declare functions*/
 void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data);
 void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p );
@@ -26,36 +19,55 @@ void my_disp_drv_init();
 void button_init();
 int16_t button_process();
 
-/*Change to your screen resolution*/
+/*显示屏分辨率预设*/
 static const uint16_t screenWidth  = 320;
 static const uint16_t screenHeight = 172;
 
 static lv_disp_draw_buf_t draw_buf;
 static lv_color_t buf[ screenWidth * 10 ];
 
+//用户变量
+TickType_t xLastWakeTime; //用于主循环中每5ms一次的延迟的时间戳
+TimerHandle_t Key_Timer;//按键扫描软件定时器句柄
 lv_group_t * my_group;//绑定控件与按键的组
 
+//实例化
 TFT_eSPI tft = TFT_eSPI(screenWidth, screenHeight); /* TFT instance */
 
 void setup()
 {
-    lv_init();
-    tft.begin();          /* TFT init */
-    tft.setRotation( 1 ); /* Landscape orientation, flipped */
-    lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * 10 );
+  // Serial.begin(115200);
+  //Timer tasks init 
+  Key_Timer = xTimerCreate(
+    "Key_Timer_Task",//描述该任务
+    KEY_PERIOD,      //周期，单位是时钟tick，使用pdMS_TO_TICKS()转换毫秒到tick
+    pdTRUE,          //是否重装载
+    0,               //定时器ID
+    Key_TimerTask    //该定时器执行的函数
+    );
 
-    /*Initialize the drivers*/
-    my_disp_drv_init();
-    my_button_regist();
-    //以下写你自己的控件代码  
-    ui_init();
-    lv_group_add_obj(my_group,ui_Screen1_ImgButton3);
+  //lvgl screen init
+  lv_init();
+  tft.begin();          /* TFT init */
+  tft.setRotation( 1 ); /* Landscape orientation, flipped */
+  lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * 10 );
+
+  /*Initialize the drivers*/
+  my_disp_drv_init();
+  my_button_regist();
+  //以下写你自己的控件代码  
+  ui_init();
+  lv_group_add_obj(my_group,ui_Screen1_ImgButton3);
+
+  //start timer task
+  xTimerStart(Key_Timer,0);
+  xLastWakeTime = xTaskGetTickCount();
 }
 
 void loop()
 {
     lv_timer_handler(); /* let the GUI do its work */
-    delay( 5 );
+    vTaskDelayUntil(&xLastWakeTime,REFRESH_PERIOD);
 }
 
 /********************************display device init***********************/
@@ -87,13 +99,6 @@ void my_disp_drv_init()
     lv_disp_drv_register( &disp_drv );
 }
 /********************************Input device init***********************/
-void button_init()
-{
-  pinMode(BTN_1,INPUT_PULLUP);
-  pinMode(BTN_2,INPUT_PULLUP);
-  pinMode(BTN_3,INPUT_PULLUP);
-}
-
 void my_button_regist()
 {
   static lv_indev_drv_t indev_drv;
@@ -108,104 +113,21 @@ void my_button_regist()
   lv_indev_set_group(my_indev,my_group);
 }
 
-void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data){
-  static int16_t last_temp, long_press_cnt;
-  int16_t temp = button_process();
-
-  if (last_temp == temp)
-  {
-    long_press_cnt++;
-    if (long_press_cnt > 10)
-    {
-      if ((long_press_cnt%3)==0)
-      {
-        if (temp == PRESSED_OK)
-        {
-          data->state = LV_INDEV_STATE_PR;
-        }
-        else 
-        {
-          data->state = LV_INDEV_STATE_REL;
-          data->enc_diff = temp;
-        }
-      }
-      else 
-      {
-        data->state = LV_INDEV_STATE_REL;
-        data->enc_diff = 0;
-      }
-    }
-  }
-  else
-  {
-    long_press_cnt = 0;
-    if (temp == PRESSED_OK)
-    {
-      data->state = LV_INDEV_STATE_PR;
-    }
-    else {
-      data->state = LV_INDEV_STATE_REL;
-      data->enc_diff = temp;
-    }
-  }
-  last_temp = temp;
+void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data)
+{
+  data->state = LV_INDEV_STATE_PR;  //编码器按键按下
+  data->state = LV_INDEV_STATE_REL; //编码器滚动
+  data->enc_diff = 0;               //编码器滚动了多少格
 }
 
-int16_t button_process()
+/************************Tasks*************************/
+void Key_TimerTask(TimerHandle_t xTimer) //每15ms扫描一次按键
 {
-  int16_t key_pressing_cnt_1 = 0,key_pressing_cnt_2 = 0,key_pressing_cnt_3 = 0;
-  int16_t temp;
-  //temp【 -1：按下了“+”；+1：按下了“-”；2：按下了“OK"；0：两个及以上一起按无效】
-  for (int i=0;i<12;i++)//12个采样窗口
-  {
-    if(digitalRead(BTN_1)==0)
-    {
-      key_pressing_cnt_1++;
-    }
-    else 
-    {
-      key_pressing_cnt_1--;
-    }
+  const uint8_t JUDGE_NUM = 8;//120ms内按下的时间大于此值，则判定为按下
+  const uint8_t SAMPLE_WINDOW = 12;//12 * 10ms ~= 120ms判断一次按键  
+  
+  int i;
+  uint16_t SampleCnt = 0;
+  int keyPressCnt[BTN_NUM];
 
-    if(digitalRead(BTN_2)==0)
-    {
-      key_pressing_cnt_2++;
-    }
-    else 
-    {
-      key_pressing_cnt_2--;
-    }
-
-    if(digitalRead(BTN_3)==0)
-    {
-      key_pressing_cnt_3++;
-    }
-    else 
-    {
-      key_pressing_cnt_3--;
-    }
-    delay(1);
-  }
-
-  if (((key_pressing_cnt_1 >=8)+(key_pressing_cnt_2 >=8)+(key_pressing_cnt_3 >=8)) >= 2)//同时按下两个及以上
-  {
-    temp = PRESSED_NONE;
-  }
-  else if(key_pressing_cnt_1 >=8)
-  {
-    temp = PRESSED_NEXT;
-  }
-  else if(key_pressing_cnt_2 >=8)
-  {
-    temp = PRESSED_OK;
-  }
-  else if(key_pressing_cnt_3 >=8)
-  {
-    temp = PRESSED_PREV;
-  }
-  else 
-  {
-    return PRESSED_NONE;
-  }
-  return temp;
 }
