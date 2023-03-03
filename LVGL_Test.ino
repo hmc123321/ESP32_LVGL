@@ -7,7 +7,6 @@
 /*micro defines*/
 #define MY_ESP32
 
-#define KEY_PERIOD pdMS_TO_TICKS(10)  //按键扫描周期
 #define REFRESH_PERIOD 5  //屏幕刷新周期
 
 
@@ -30,7 +29,6 @@ static lv_color_t buf[ screenWidth * 10 ];
 TickType_t xLastWakeTime; //用于主循环中每5ms一次的延迟的时间戳
 TimerHandle_t Key_Timer;//按键扫描软件定时器句柄
 lv_group_t * my_group;//绑定控件与按键的组
-
 //实例化
 TFT_eSPI tft = TFT_eSPI(screenWidth, screenHeight); /* TFT instance */
 
@@ -121,13 +119,3 @@ void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data)
 }
 
 /************************Tasks*************************/
-void Key_TimerTask(TimerHandle_t xTimer) //每15ms扫描一次按键
-{
-  const uint8_t JUDGE_NUM = 8;//120ms内按下的时间大于此值，则判定为按下
-  const uint8_t SAMPLE_WINDOW = 12;//12 * 10ms ~= 120ms判断一次按键  
-  
-  int i;
-  uint16_t SampleCnt = 0;
-  int keyPressCnt[BTN_NUM];
-
-}
