@@ -12,6 +12,7 @@
 
 #define PRESSING_EVENT  0
 #define RELEASE_EVENT   1
+#define LONG_PR_CNT   2
 typedef enum 
 {
   BTN_1 = 0,

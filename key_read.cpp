@@ -4,17 +4,18 @@ Key_State buttonLastRead[BTN_NUM] = {KEY_RELEASE, KEY_RELEASE, KEY_RELEASE};//�
 Key_State buttonState[BTN_NUM]; // 局部按键状态
 Key_State keyState[BTN_NUM];
 
-uint16_t Button_Pins[BTN_NUM] = {15,13,26};
+uint16_t Button_Pins[BTN_NUM] = {26,13,15};
 // uint16_t Button_Pins[BTN_NUM] = {18,19,47};
 
 Key_State mg_keyState[BTN_NUM];
 Key_State mg_lastKeyState[BTN_NUM];
 
 //按钮事件
-int16_t KeyEvent[2][BTN_NUM]=
+int16_t KeyEvent[3][BTN_NUM]=
 {
-  {-1,  LV_INDEV_STATE_PR , 1},//按下的状态
+  { 1,  LV_INDEV_STATE_PR ,-1},//按下的状态
   { 0,  LV_INDEV_STATE_REL, 0},//松开的状态
+  { 0,  0                 , 0},//长按的计数
 };
 
 static uint32_t buttonTimer[BTN_NUM] = {0, 0, 0}; // 按键计数器
@@ -108,7 +109,7 @@ void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data)
    
   data->state = ((mg_keyState[BTN_2] == KEY_RELEASE) ? lv_indev_state_t(KeyEvent[RELEASE_EVENT][BTN_2]): lv_indev_state_t(KeyEvent[PRESSING_EVENT][BTN_2]));//确定按钮,可长按
   
-  //选择按钮，不可长按
+  //方向按钮，长按与短按触发不一样
   for(int i = 0; i < BTN_NUM; i++)
   {
     if(i == BTN_2)//跳过确定键
@@ -118,16 +119,21 @@ void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data)
     if ((mg_lastKeyState[i] != mg_keyState[i]) && (mg_keyState[i] == KEY_SHORT_PRESSING) )
     {
       data->enc_diff = KeyEvent[PRESSING_EVENT][i];
+      break;
     }
     else if (mg_keyState[i] == KEY_LONG_PRESSING)
     {
-      data->enc_diff = KeyEvent[PRESSING_EVENT][i];
+      KeyEvent[LONG_PR_CNT][i] ++;
+      data->enc_diff = KeyEvent[PRESSING_EVENT][i] * ((KeyEvent[LONG_PR_CNT][i] % 5) == 0);
+      break;
     }
     else
     {
       data->enc_diff = KeyEvent[RELEASE_EVENT][i];
     }
-
+  }
+  for(int i = 0; i < BTN_NUM; i++)
+  {
     mg_lastKeyState[i] = mg_keyState[i];
   }
 }
