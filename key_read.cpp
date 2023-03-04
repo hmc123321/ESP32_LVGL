@@ -127,10 +127,7 @@ void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data)
     {
       data->enc_diff = KeyEvent[RELEASE_EVENT][i];
     }
-  }
 
-  for(int i = 0; i<BTN_NUM ;i++)
-  {
     mg_lastKeyState[i] = mg_keyState[i];
   }
 }
