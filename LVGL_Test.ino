@@ -1,22 +1,16 @@
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 #include "ui.h"
-
 #include "key_read.h"
 
 /*micro defines*/
-#define MY_ESP32
-
 #define REFRESH_PERIOD 5  //屏幕刷新周期
-
 
 /*declare functions*/
 void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data);
 void my_disp_flush( lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p );
 void my_button_regist();
 void my_disp_drv_init();
-void button_init();
-int16_t button_process();
 
 /*显示屏分辨率预设*/
 static const uint16_t screenWidth  = 320;
@@ -27,23 +21,16 @@ static lv_color_t buf[ screenWidth * 10 ];
 
 //用户变量
 TickType_t xLastWakeTime; //用于主循环中每5ms一次的延迟的时间戳
-TimerHandle_t Key_Timer;//按键扫描软件定时器句柄
 lv_group_t * my_group;//绑定控件与按键的组
+TaskHandle_t myTaskHandle;
+
 //实例化
 TFT_eSPI tft = TFT_eSPI(screenWidth, screenHeight); /* TFT instance */
 
 void setup()
 {
-  // Serial.begin(115200);
-  //Timer tasks init 
-  Key_Timer = xTimerCreate(
-    "Key_Timer_Task",//描述该任务
-    KEY_PERIOD,      //周期，单位是时钟tick，使用pdMS_TO_TICKS()转换毫秒到tick
-    pdTRUE,          //是否重装载
-    0,               //定时器ID
-    Key_TimerTask    //该定时器执行的函数
-    );
-
+  Serial.begin(115200);
+ 
   //lvgl screen init
   lv_init();
   tft.begin();          /* TFT init */
@@ -56,10 +43,31 @@ void setup()
   //以下写你自己的控件代码  
   ui_init();
   lv_group_add_obj(my_group,ui_Screen1_ImgButton3);
-
-  //start timer task
-  xTimerStart(Key_Timer,0);
+  xTaskCreatePinnedToCore(myTask, "myTask", 2048, NULL, 1, &myTaskHandle, 0);
   xLastWakeTime = xTaskGetTickCount();
+}
+
+//主要逻辑写在这个函数里，在与loop并行的Core 0运行，loop优先级最高，只用来刷屏幕。
+void myTask(void *pvParameters) {
+  Key_State keyStateMonitor[BTN_NUM];
+  while (1) {
+    // 在这里编写任务的具体逻辑
+    // 读取按键状态数组
+    // xSemaphoreTake(buttonStateSemaphore, portMAX_DELAY);
+    // for(int i = 0; i<BTN_NUM ;i++)
+    // {
+    //   keyStateMonitor[i] = keyState[i];
+    // }
+    // xSemaphoreGive(buttonStateSemaphore);
+    
+    // Serial.print(keyStateMonitor[BTN_1]);
+    // Serial.print(",");
+    // Serial.print(keyStateMonitor[BTN_2]);
+    // Serial.print(",");
+    // Serial.println(keyStateMonitor[BTN_3]);
+    // 暂停任务 100ms，以避免过多占用 CPU 资源
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+  }
 }
 
 void loop()
@@ -103,7 +111,7 @@ void my_button_regist()
   lv_indev_drv_init(&indev_drv);      /*Basic initialization*/
   indev_drv.type = LV_INDEV_TYPE_ENCODER;
   indev_drv.read_cb = encoder_callback;
-  indev_drv.long_press_repeat_time = 5000;
+  // indev_drv.long_press_repeat_time = 5000;
   /*Register the driver in LVGL and save the created input device object*/
   lv_indev_t * my_indev = lv_indev_drv_register(&indev_drv);
 
@@ -111,11 +119,3 @@ void my_button_regist()
   lv_indev_set_group(my_indev,my_group);
 }
 
-void encoder_callback(lv_indev_drv_t * drv, lv_indev_data_t*data)
-{
-  data->state = LV_INDEV_STATE_PR;  //编码器按键按下
-  data->state = LV_INDEV_STATE_REL; //编码器滚动
-  data->enc_diff = 0;               //编码器滚动了多少格
-}
-
-/************************Tasks*************************/
